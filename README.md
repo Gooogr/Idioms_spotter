@@ -3,4 +3,4 @@
 
 Data sources:
 * [magpie-corpus](https://github.com/hslh/magpie-corpus) [[Download json](https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl)]
-* [pie-annotation](https://github.com/hslh/pie-annotation) [[Download json](https://github.com/hslh/pie-annotation/blob/master/PIE_annotations_all_no_sentences.json)]
+* [pie-annotation](https://github.com/hslh/pie-annotation) [[Download json](https://raw.githubusercontent.com/hslh/pie-annotation/master/PIE_annotations_all_no_sentences.json)]
