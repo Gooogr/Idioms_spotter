@@ -2,5 +2,5 @@
 🤗 RoBerta for identification English idiomatic expressions in text
 
 Data sources:
-* [magpie-corpus](https://github.com/hslh/magpie-corpus)
-* [pie-annotation](https://github.com/hslh/pie-annotation)
+* [magpie-corpus](https://github.com/hslh/magpie-corpus) [[Download json](https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl)]
+* [pie-annotation](https://github.com/hslh/pie-annotation) [[Download json](https://github.com/hslh/pie-annotation/blob/master/PIE_annotations_all_no_sentences.json)]
