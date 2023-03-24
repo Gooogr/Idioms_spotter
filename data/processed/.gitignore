@@ -1,0 +1,3 @@
+# Keep folder structure and prevent to push any datasets
+*
+!.gitignore
