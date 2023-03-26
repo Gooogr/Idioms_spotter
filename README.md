@@ -1,12 +1,22 @@
 # Idioms_spotter
-🤗 RoBerta for identification English idiomatic expressions in text
+🤗 Transformers for identification English potentials idiomatic expressions (PIE) in text.
+
+## Model
+Supported models for training: <br>
+* BERT
+* RoBERTa
+* DistilBERT
+* ConvBERT
 
 ## Dataset
-The model was trained using MAGPIE and PIE corpuses.
-* [magpie-corpus](https://github.com/hslh/magpie-corpus) [[Download jsonl](https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl)]
-* [pie-annotation](https://github.com/hslh/pie-annotation) [[Download json](https://raw.githubusercontent.com/hslh/pie-annotation/master/PIE_annotations_all_no_sentences.json)]
+Result dataset is available for download from the HuggingFace hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
 
-Run these commands from the project root to get them:
+Dataset based on MAGPIE and PIE corpuses:
+* [magpie-corpus](https://github.com/hslh/magpie-corpus) 
+* [pie-annotation](https://github.com/hslh/pie-annotation) 
+
+Full data preparation pipeline available in [data_preparation](https://github.com/Gooogr/Idioms_spotter/blob/main/notebooks/data_preparation.ipynb) notebook.
+To obtain the json source files, run these commands from the root of the project:
 ```
 curl -o ./data/raw/pie-corpus.json https://raw.githubusercontent.com/hslh/pie-annotation/master/PIE_annotations_all_no_sentences.json
 curl -o ./data/raw/magpie-corpus.jsonl https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl
