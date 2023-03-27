@@ -3,5 +3,13 @@ python3 ./src/train.py \
   --output_dir ./models/xlm-roberta-base-finetuned \
   --num_train_epochs 10 \
   --seed 42 \
-  --per_device_train_batch_size 16\
-  --per_device_eval_batch_size 16\
+  --per_device_train_batch_size 16 \
+  --per_device_eval_batch_size 16 \
+  --log_level error \
+  --weight_decay 0.01 \
+  --load_best_model_at_end True \
+  --metric_for_best_model f1 \
+  --greater_is_better True \
+  --do_train True \
+  --evaluation_strategy epoch \
+  --save_strategy epoch 
