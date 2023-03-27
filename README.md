@@ -25,5 +25,23 @@ Note: the PIE corps needs to be further enriched with data in order to obtain su
 
 Raw and already enriched data can be downloaded [here](https://drive.google.com/file/d/1Hvlqp3VU9DeiZeocJNzG4GaxGduOyFAG/view?usp=sharing).
 
+## Training
+The following example fine-tunes XLM-RoBERTa:
+```
+python3 ./src/train.py \
+  --model_name_or_path xlm-roberta-base \
+  --output_dir ./models/xlm-roberta-base-finetuned \
+  --num_train_epochs 10 \
+  --seed 42 \
+  --per_device_train_batch_size 16\
+  --per_device_eval_batch_size 16\
+```
+Code will either run on pre-saved model from selected folder or download model from huggingface.co/models based on model identifier.
+
+Alternatively, you can select model and training params in `train.sh`
+```
+bash train.sh
+```
+
 
 
