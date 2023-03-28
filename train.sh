@@ -5,8 +5,9 @@ python3 ./src/train.py \
   --seed 42 \
   --per_device_train_batch_size 16 \
   --per_device_eval_batch_size 16 \
-  --log_level error \
+  --log_level info \
   --weight_decay 0.01 \
+  --logging_steps 1000 \
   --load_best_model_at_end True \
   --metric_for_best_model f1 \
   --greater_is_better True \

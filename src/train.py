@@ -1,12 +1,17 @@
 """
 Fine-tuning the HF models for PIEs token classification.
 """
+import os
+import sys
 import logging
 import torch
 import numpy as np
 from helper import tokenize_and_allign_labels, compute_metrics
 from dataclasses import dataclass, field
+import datasets
 from datasets import load_dataset
+import transformers
+from transformers.trainer_utils import get_last_checkpoint
 from transformers import (
     HfArgumentParser,
     TrainingArguments,
@@ -34,6 +39,8 @@ class DataTrainArguments:
         metadata={"help": "Dataset identifier from huggingface.co/datasets"}
     )
 
+logger = logging.getLogger(__name__)
+
 if __name__ == "__main__":
     parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
     train_args, data_args, model_args = parser.parse_args_into_dataclasses()
@@ -41,7 +48,26 @@ if __name__ == "__main__":
     # Set seed 
     set_seed(train_args.seed)
 
-    # TODO: add logging
+    # Setup logging
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+
+    if train_args.should_log:
+        # The default of training_args.log_level is passive, so we set 
+        # log level at info here to have that default.
+        transformers.utils.logging.set_verbosity_info()
+
+    log_level = train_args.get_process_log_level()
+    logger.setLevel(log_level)
+    datasets.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
+    logger.info(f"Training/evaluation parameters {train_args}")
     
     # Load dataset and get tags for model config
     dataset = load_dataset(data_args.dataset_name)
@@ -62,6 +88,21 @@ if __name__ == "__main__":
         batched=True, 
         fn_kwargs={"tokenizer": tokenizer},
         remove_columns=['ner_tags', 'tokens', 'idiom', 'is_pie'])
+    
+    # Detecting last checkpoint.
+    last_checkpoint = None
+    if os.path.isdir(train_args.output_dir) and train_args.do_train and not train_args.overwrite_output_dir:
+        last_checkpoint = get_last_checkpoint(train_args.output_dir)
+        if last_checkpoint is None and len(os.listdir(train_args.output_dir)) > 0:
+            raise ValueError(
+                f"Output directory ({train_args.output_dir}) already exists and is not empty. "
+                "Use --overwrite_output_dir to overcome."
+            )
+        elif last_checkpoint is not None and train_args.resume_from_checkpoint is None:
+            logger.info(
+                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
+                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
+            )
 
     # Set up model
     model_config = AutoConfig.from_pretrained(
@@ -74,35 +115,28 @@ if __name__ == "__main__":
         model_args.model_name_or_path, 
         config=model_config).to(device)
 
-    # Set up training parameters
-    logging_steps = len(dataset_encoded['train']) // train_args.per_device_train_batch_size
-    
-    training_args = TrainingArguments(
-        output_dir=train_args.output_dir,
-        log_level=train_args.log_level,
-        num_train_epochs=train_args.num_train_epochs,
-        per_device_train_batch_size=train_args.per_device_train_batch_size,
-        per_device_eval_batch_size=train_args.per_device_eval_batch_size,
-        evaluation_strategy=train_args.evaluation_strategy,
-        save_strategy=train_args.save_strategy,
-        weight_decay=train_args.weight_decay,
-        logging_steps=logging_steps,
-        load_best_model_at_end=train_args.load_best_model_at_end,
-        metric_for_best_model=train_args.metric_for_best_model,
-        greater_is_better=train_args.greater_is_better
-    )
-
     # Train model
+    trainer = Trainer(
+        model = model,
+        args=train_args,
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+        train_dataset=dataset_encoded['train'],
+        eval_dataset=dataset_encoded['validation'],
+        tokenizer=tokenizer)
+
     if train_args.do_train:
-        trainer = Trainer(
-            model = model,
-            args=training_args,
-            data_collator=data_collator,
-            compute_metrics=compute_metrics,
-            train_dataset=dataset_encoded['train'],
-            eval_dataset=dataset_encoded['validation'],
-            tokenizer=tokenizer
-        )
-        trainer.train()
+        checkpoint = None
+        if train_args.resume_from_checkpoint is not None:
+            checkpoint = train_args.resume_from_checkpoint
+        elif last_checkpoint is not None:
+            checkpoint = last_checkpoint
+        trainer.train(resume_from_checkpoint=checkpoint)
+        trainer.save_model()
+
+        kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "token-classification"}
+        if train_args.push_to_hub:
+            trainer.push_to_hub(**kwargs)
+
 
 
