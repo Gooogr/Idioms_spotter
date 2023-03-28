@@ -8,6 +8,8 @@ Supported models for training: <br>
 * DistilBERT
 * ConvBERT
 
+In general, the list of models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
+
 ## Dataset
 Result dataset is available for download from the HuggingFace hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
 
@@ -33,12 +35,22 @@ python3 ./src/train.py \
   --output_dir ./models/xlm-roberta-base-finetuned \
   --num_train_epochs 10 \
   --seed 42 \
-  --per_device_train_batch_size 16\
-  --per_device_eval_batch_size 16\
+  --per_device_train_batch_size 16 \
+  --per_device_eval_batch_size 16 \
+  --log_level info \
+  --weight_decay 0.01 \
+  --logging_steps 1000 \
+  --load_best_model_at_end True \
+  --metric_for_best_model f1 \
+  --greater_is_better True \
+  --do_train True \
+  --evaluation_strategy epoch \
+  --save_strategy epoch 
 ```
 Code will either run on pre-saved model from selected folder or download model from huggingface.co/models based on model identifier.
+Training can be continued from the selected checkpoint s well. Full list of training parameters available [here](https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py#L135)
 
-Alternatively, you can select model and training params in `train.sh`
+Alternatively, you can specify model and training params in `train.sh`
 ```
 bash train.sh
 ```
