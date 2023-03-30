@@ -2,7 +2,7 @@
 🤗 Transformers for identification English potentials idiomatic expressions (PIE) in text.
 
 ## Dataset
-Result dataset is available for download from the HuggingFace hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
+Result dataset is available for download from the Hugging Face hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
 
 Dataset based on MAGPIE and PIE corpuses:
 * [magpie-corpus](https://github.com/hslh/magpie-corpus) 
@@ -28,6 +28,7 @@ Supported models for training: <br>
 In general, the list of models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
 
 ## Fine-tuned models
+Hugging Face model cards:
 * [xlm-roberta-base-pie](https://huggingface.co/Gooogr/xlm-roberta-base-pie)
 
 ## Training from scratch
