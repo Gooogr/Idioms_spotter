@@ -1,14 +1,5 @@
-# Idioms_spotter
+# Idioms spotter
 🤗 Transformers for identification English potentials idiomatic expressions (PIE) in text.
-
-## Model
-Supported models for training: <br>
-* BERT
-* RoBERTa
-* DistilBERT
-* ConvBERT
-
-In general, the list of models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
 
 ## Dataset
 Result dataset is available for download from the HuggingFace hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
@@ -27,7 +18,29 @@ Note: the PIE corps needs to be further enriched with data in order to obtain su
 
 Raw and already enriched data can be downloaded [here](https://drive.google.com/file/d/1Hvlqp3VU9DeiZeocJNzG4GaxGduOyFAG/view?usp=sharing).
 
-## Training
+## Supported models
+Supported models for training: <br>
+* BERT
+* RoBERTa
+* DistilBERT
+* ConvBERT
+
+In general, the list of models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
+
+## Fine-tuned models
+* [xlm-roberta-base-pie](https://huggingface.co/Gooogr/xlm-roberta-base-pie)
+
+## Training from scratch
+
+Environment setup
+```
+conda create -n idioms python=3.9
+conda activate idioms
+pip install -r requirements.txt
+# If you want to use additional project's notebooks
+pip install notebook ipywidgets
+```
+
 The following example fine-tunes XLM-RoBERTa:
 ```
 python3 ./src/train.py \
@@ -55,5 +68,5 @@ Alternatively, you can specify model and training params in `train.sh`
 bash train.sh
 ```
 
-
-
+## License
+Distributed under the MIT License.
