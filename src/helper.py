@@ -4,7 +4,7 @@ Helper functions for Token Classification tasks
 import numpy as np
 from transformers import PreTrainedTokenizer
 from datasets.formatting.formatting import LazyBatch
-from seqeval.metrics import f1_score, accuracy_score, recall_score
+from seqeval.metrics import f1_score, accuracy_score, recall_score, precision_score
 
 def tokenize_and_allign_labels(
     examples: LazyBatch, 
@@ -63,5 +63,6 @@ def create_compute_metrics(index2tag):
             index2tag)
         return {'f1': f1_score(y_true, y_pred), 
                 'accuracy': accuracy_score(y_true, y_pred),
+                'precision': precision_score(y_true, y_pred),
                 'recall': recall_score(y_true, y_pred)}
     return compute_metrics
