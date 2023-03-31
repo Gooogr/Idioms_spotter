@@ -3,3 +3,4 @@ torch >= 1.3
 transformers[sentencepiece]
 seqeval
 seaborn
+wandb

@@ -5,6 +5,7 @@ import os
 import sys
 import logging
 import torch
+import wandb
 import numpy as np
 from helper import tokenize_and_allign_labels, create_compute_metrics
 from dataclasses import dataclass, field
@@ -40,6 +41,7 @@ class DataTrainArguments:
     )
 
 logger = logging.getLogger(__name__)
+wandb.login()
 
 if __name__ == "__main__":
     parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
