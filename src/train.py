@@ -115,7 +115,7 @@ if __name__ == "__main__":
         model_args.model_name_or_path, 
         config=model_config).to(device)
 
-    # Train model
+    # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
     trainer = Trainer(
         model = model,
@@ -126,7 +126,9 @@ if __name__ == "__main__":
         eval_dataset=dataset_encoded['validation'],
         tokenizer=tokenizer)
 
+    # Train model
     if train_args.do_train:
+        logger.info("*** Train model ***")
         checkpoint = None
         if train_args.resume_from_checkpoint is not None:
             checkpoint = train_args.resume_from_checkpoint
@@ -137,6 +139,14 @@ if __name__ == "__main__":
 
         if train_args.push_to_hub:
             trainer.push_to_hub()
+
+    # Evaluate model
+    if train_args.do_eval:
+        logger.info("*** Evaluate model ***")
+        eval_metrics = trainer.evaluate()
+        logger.info(eval_metrics)
+
+
 
 
 
