@@ -146,7 +146,7 @@ if __name__ == "__main__":
             best_ckpt_path = trainer.state.best_model_checkpoint
             model = AutoModelForTokenClassification.from_pretrained(
                 best_ckpt_path, config=model_config)
-            repo_name = train_args.model_name_or_path.split('/')[-1]
+            repo_name = model_args.model_name_or_path.split('/')[-1]
             repo_name = f'{repo_name}-pie'
             model.push_to_hub(repo_name)
             tokenizer.push_to_hub(repo_name)
