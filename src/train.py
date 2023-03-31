@@ -11,6 +11,7 @@ from helper import tokenize_and_allign_labels, create_compute_metrics
 from dataclasses import dataclass, field
 import datasets
 from datasets import load_dataset
+import huggingface_hub
 import transformers
 from transformers.trainer_utils import get_last_checkpoint
 from transformers import (
@@ -140,7 +141,15 @@ if __name__ == "__main__":
         trainer.save_model(output_dir=train_args.output_dir)
 
         if train_args.push_to_hub:
-            trainer.push_to_hub()
+            huggingface_hub.login()
+            # To make sure that we push best, not last model
+            best_ckpt_path = trainer.state.best_model_checkpoint
+            model = AutoModelForTokenClassification.from_pretrained(
+                best_ckpt_path, config=model_config)
+            repo_name = train_args.model_name_or_path.split('/')[-1]
+            repo_name = f'{repo_name}-pie'
+            model.push_to_hub(repo_name)
+            tokenizer.push_to_hub(repo_name)
 
     # Evaluate model
     if train_args.do_eval:
