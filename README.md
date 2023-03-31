@@ -46,8 +46,8 @@ pip install notebook ipywidgets
 The following example shows how to fine-tune XLM-RoBERTa:
 ```
 python3 ./src/train.py \
-  --model_name_or_path xlm-roberta-base \
-  --output_dir ./models/xlm-roberta-base-finetuned \
+  --model_name_or_path xlm-roberta-base\
+  --output_dir ./models/xlm-roberta-base-pie \
   --num_train_epochs 10 \
   --seed 42 \
   --per_device_train_batch_size 16 \
@@ -59,6 +59,8 @@ python3 ./src/train.py \
   --metric_for_best_model f1 \
   --greater_is_better True \
   --do_train True \
+  --do_eval True \
+  --report_to="wandb" \
   --evaluation_strategy epoch \
   --save_strategy epoch 
 ```
