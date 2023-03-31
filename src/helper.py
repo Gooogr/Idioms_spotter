@@ -54,8 +54,14 @@ def allign_predictions(predictions, label_ids, index2tag):
         pred_list.append(example_preds)
     return pred_list, label_list
 
-def compute_metrics(eval_pred):
-    y_pred, y_true = allign_predictions(eval_pred.predictions, eval_pred.label_ids)
-    return {'f1': f1_score(y_true, y_pred), 
-            'accuracy': accuracy_score(y_true, y_pred),
-            'recall': recall_score(y_true, y_pred)}
+def create_compute_metrics(index2tag):
+    def compute_metrics(eval_pred):
+        nonlocal index2tag
+        y_pred, y_true = allign_predictions(
+            eval_pred.predictions, 
+            eval_pred.label_ids,
+            index2tag)
+        return {'f1': f1_score(y_true, y_pred), 
+                'accuracy': accuracy_score(y_true, y_pred),
+                'recall': recall_score(y_true, y_pred)}
+    return compute_metrics

@@ -6,7 +6,7 @@ import sys
 import logging
 import torch
 import numpy as np
-from helper import tokenize_and_allign_labels, compute_metrics
+from helper import tokenize_and_allign_labels, create_compute_metrics
 from dataclasses import dataclass, field
 import datasets
 from datasets import load_dataset
@@ -116,6 +116,7 @@ if __name__ == "__main__":
         config=model_config).to(device)
 
     # Train model
+    compute_metrics = create_compute_metrics(index2tag)
     trainer = Trainer(
         model = model,
         args=train_args,
@@ -132,11 +133,10 @@ if __name__ == "__main__":
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()
+        trainer.save_model(output_dir=train_args.output_dir)
 
-        kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "token-classification"}
         if train_args.push_to_hub:
-            trainer.push_to_hub(**kwargs)
+            trainer.push_to_hub()
 
 
 
