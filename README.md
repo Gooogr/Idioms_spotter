@@ -1,6 +1,8 @@
 # Idioms spotter
 🤗 Transformers for identification English potentials idiomatic expressions (PIE) in text.
 
+![Alt text](/references/api_example.png?raw=true)
+
 ## Dataset
 Result dataset is available for download from the Hugging Face hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
 
