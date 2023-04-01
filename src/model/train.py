@@ -6,7 +6,6 @@ import sys
 import logging
 import torch
 import wandb
-import numpy as np
 from helper import tokenize_and_allign_labels, create_compute_metrics
 from dataclasses import dataclass, field
 import datasets
