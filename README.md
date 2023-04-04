@@ -78,9 +78,9 @@ bash train.sh
 ```
 
 ## Docker
+For API inference running
 ```
-docker build -t idioms .
-docker run --name idioms_container -p 80:80 idioms
+docker-compose up --build
 ```
 
 
