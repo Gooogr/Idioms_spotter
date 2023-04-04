@@ -77,5 +77,12 @@ Alternatively, you can specify model and training params in `train.sh`
 bash train.sh
 ```
 
+## Docker
+```
+docker build -t idioms .
+docker run --name idioms_container -p 80:80 idioms
+```
+
+
 ## License
 Distributed under the MIT License.
