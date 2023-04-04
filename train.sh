@@ -1,4 +1,4 @@
-python3 ./src/train.py \
+python3 ./src/model/train.py \
   --model_name_or_path xlm-roberta-base\
   --output_dir ./models/xlm-roberta-base-pie \
   --num_train_epochs 10 \

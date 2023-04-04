@@ -1,6 +1,6 @@
+# Only essential packages for model inference
 datasets >= 1.8.0
 torch >= 1.3
 transformers[sentencepiece]
-seqeval
-seaborn
-wandb
+fastapi
+uvicorn
