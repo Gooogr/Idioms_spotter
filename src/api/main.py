@@ -2,18 +2,25 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import pipeline
 import numpy as np
+import torch
 import uvicorn
-
-app = FastAPI()
 
 MODEL_NAME = 'Gooogr/xlm-roberta-base-pie'
 
 class TextRequest(BaseModel):
     text: str
 
-# TODO: add device selection from created src/model/utils
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+nlp = pipeline("token-classification", 
+               model=MODEL_NAME, 
+               tokenizer=MODEL_NAME,
+               device=device)
 
-nlp = pipeline("token-classification", model=MODEL_NAME, tokenizer=MODEL_NAME)
+app = FastAPI()
+
+@app.get("/")
+def check_health():
+    return {"Health check": "Ok"}
 
 @app.post("/predict_ner")
 def predict_ner(text_request: TextRequest):
