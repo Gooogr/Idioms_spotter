@@ -4,7 +4,8 @@
 ![Alt text](/references/api_example.png?raw=true)
 
 ## Dataset
-Result dataset is available for download from the Hugging Face hub: [Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
+Result dataset is available for download from the Hugging Face hub: <br>
+[Dataset page](https://huggingface.co/datasets/Gooogr/pie_idioms)
 
 The dataset is based on MAGPIE and PIE corpuses:
 * [magpie-corpus](https://github.com/hslh/magpie-corpus) 
@@ -30,7 +31,12 @@ In general, the list of models is determined by their support in the [AutoModelF
 
 ## Fine-tuned models
 The following fine-tuned models are available on Hugging Face model hub:
-* [xlm-roberta-base-pie](https://huggingface.co/Gooogr/xlm-roberta-base-pie)
+| Model                                                                  | Loss  | F1    | Precision | Recall |
+|------------------------------------------------------------------------|-------|-------|-----------|--------|
+| [XLM Roberta base](https://huggingface.co/Gooogr/xlm-roberta-base-pie) | 0.095 | 0.856 | 0.836     | 0.876  |
+|                                                                        |       |       |           |        |
+
+All metrics are obtained on the validation part of the dataset
 
 ## Training from scratch
 
