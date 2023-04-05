@@ -27,27 +27,33 @@ from transformers import (
 # Full list of TrainingArguments available here
 # https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 
+
 @dataclass
 class ModelArguments:
     model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+        metadata={"help": "Path to pretrained model or model \
+                  identifier from huggingface.co/models"}
     )
+
 
 @dataclass
 class DataTrainArguments:
     dataset_name: str = field(
-        default = 'Gooogr/pie_idioms',
+        default='Gooogr/pie_idioms',
         metadata={"help": "Dataset identifier from huggingface.co/datasets"}
     )
+
 
 logger = logging.getLogger(__name__)
 wandb.login()
 
 if __name__ == "__main__":
-    parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
+    parser = HfArgumentParser((TrainingArguments,
+                               DataTrainArguments,
+                               ModelArguments))
     train_args, data_args, model_args = parser.parse_args_into_dataclasses()
 
-    # Set seed 
+    # Set seed
     set_seed(train_args.seed)
 
     # Setup logging
@@ -58,7 +64,7 @@ if __name__ == "__main__":
     )
 
     if train_args.should_log:
-        # The default of training_args.log_level is passive, so we set 
+        # The default of training_args.log_level is passive, so we set
         # log level at info here to have that default.
         transformers.utils.logging.set_verbosity_info()
 
@@ -70,7 +76,7 @@ if __name__ == "__main__":
     transformers.utils.logging.enable_explicit_format()
 
     logger.info(f"Training/evaluation parameters {train_args}")
-    
+
     # Load dataset and get tags for model config
     dataset = load_dataset(data_args.dataset_name)
     tags = dataset['train'].features['ner_tags'].feature
@@ -82,45 +88,46 @@ if __name__ == "__main__":
 
     # Set up tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
-    data_collator = DataCollatorForTokenClassification(tokenizer) 
+    data_collator = DataCollatorForTokenClassification(tokenizer)
 
     # Convert word tokens -> sentencepice tokens
     dataset_encoded = dataset.map(
-        tokenize_and_allign_labels, 
-        batched=True, 
+        tokenize_and_allign_labels,
+        batched=True,
         fn_kwargs={"tokenizer": tokenizer},
         remove_columns=['ner_tags', 'tokens', 'idiom', 'is_pie'])
-    
+
     # Detecting last checkpoint.
     last_checkpoint = None
     if os.path.isdir(train_args.output_dir) and train_args.do_train and not train_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(train_args.output_dir)
         if last_checkpoint is None and len(os.listdir(train_args.output_dir)) > 0:
             raise ValueError(
-                f"Output directory ({train_args.output_dir}) already exists and is not empty. "
-                "Use --overwrite_output_dir to overcome."
+                f"Output directory ({train_args.output_dir}) already exists "
+                "and is not empty. Use --overwrite_output_dir to overcome."
             )
         elif last_checkpoint is not None and train_args.resume_from_checkpoint is None:
             logger.info(
-                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
-                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
+                f"Checkpoint detected, resuming training at {last_checkpoint}."
+                " To avoid this behavior, change the `--output_dir` or add "
+                "`--overwrite_output_dir` to train from scratch."
             )
 
     # Set up model
     model_config = AutoConfig.from_pretrained(
-        model_args.model_name_or_path, 
-        num_labels=tags.num_classes, 
-        id2label=index2tag, 
+        model_args.model_name_or_path,
+        num_labels=tags.num_classes,
+        id2label=index2tag,
         label2id=tag2index)
 
     model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path, 
+        model_args.model_name_or_path,
         config=model_config).to(device)
 
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
     trainer = Trainer(
-        model = model,
+        model=model,
         args=train_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
@@ -155,8 +162,3 @@ if __name__ == "__main__":
         logger.info("*** Evaluate model ***")
         eval_metrics = trainer.evaluate()
         logger.info(eval_metrics)
-
-
-
-
-

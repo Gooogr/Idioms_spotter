@@ -1,26 +1,30 @@
 '''
 Helper functions for Token Classification tasks
 '''
+from typing import Callable
 import numpy as np
 from transformers import PreTrainedTokenizer
+from transformers.trainer_utils import EvalPrediction
 from datasets.formatting.formatting import LazyBatch
-from seqeval.metrics import f1_score, accuracy_score, recall_score, precision_score
+from seqeval.metrics import (f1_score, accuracy_score,
+                             recall_score, precision_score)
+
 
 def tokenize_and_allign_labels(
-    examples: LazyBatch, 
+    examples: LazyBatch,
     tokenizer: PreTrainedTokenizer
 ) -> LazyBatch:
-    '''
-    Apply sentencepiece tokenization to input batch, then allign new tokens with 
-    NER tags. Input assumes that source string was pre-tokenized by words.
+    """
+    Apply sentencepiece tokenization to input batch, then allign new tokens
+    with NER tags. Input assumes that source string was pre-tokenized by words.
     Args:
-        examples (LazyBatch): Input batch
-        tokenizer (HuggingFace): tokenizer
+    - examples (LazyBatch): Input batch
+    - tokenizer (HuggingFace): tokenizer
     Returns:
-        tokenized_inputs (LazyBatch): Processed batch, ready for NER model training 
-    '''
-    tokenized_inputs = tokenizer(examples['tokens'], 
-                                 truncation=True, 
+    - tokenized_inputs (LazyBatch): Processed batch, ready for model training
+    """
+    tokenized_inputs = tokenizer(examples['tokens'],
+                                 truncation=True,
                                  is_split_into_words=True)
     labels = []
     for idx, label in enumerate(examples['ner_tags']):
@@ -37,9 +41,30 @@ def tokenize_and_allign_labels(
     tokenized_inputs['labels'] = labels
     return tokenized_inputs
 
-#----------------------------------------
 
-def allign_predictions(predictions, label_ids, index2tag):
+def allign_predictions(
+    predictions: np.ndarray,
+    label_ids: np.ndarray,
+    index2tag: dict
+) -> tuple[list[list[str]], list[list[str]]]:
+    """
+    Given a batch of model predictions and corresponding true label IDs, align
+    the predicted and true labels based on the non-padding and non-masked
+    tokens in the input sequence.
+
+    Args:
+    - predictions (np.ndarray): A batch of model predictions.
+        Shape (batch_size, seq_len, num_labels).
+    - label_ids (np.ndarray): A batch of true label IDs.
+        Shape (batch_size, seq_len).
+    - index2tag (dict): A dictionary that maps label indices to label names.
+
+    Returns:
+    - pred_list (List[List[str]]): A list of predicted labels for each example
+        in the batch. Shape (batch_size, variable).
+    - label_list (List[List[str]]): A list of true labels for each example
+        in the batch. Shape (batch_size, variable).
+    """
     preds = np.argmax(predictions, axis=2)
     batch_size, seq_len = preds.shape
     label_list, pred_list = [], []
@@ -54,14 +79,27 @@ def allign_predictions(predictions, label_ids, index2tag):
         pred_list.append(example_preds)
     return pred_list, label_list
 
-def create_compute_metrics(index2tag):
+
+def create_compute_metrics(index2tag: dict) -> Callable[[EvalPrediction]]:
+    """
+    Create and return a function for computing evaluation metrics for a
+    sequence tagging model, given a mapping from label indices to label names.
+
+    Args:
+    - index2tag (dict): A dictionary that maps label indices to label names.
+
+    Returns:
+    - compute_metrics (Callable): A function that takes an `EvalPrediction`
+        object as input and returns a dictionary of evaluation metrics,
+        including F1 score, accuracy, precision, and recall.
+    """
     def compute_metrics(eval_pred):
         nonlocal index2tag
         y_pred, y_true = allign_predictions(
-            eval_pred.predictions, 
+            eval_pred.predictions,
             eval_pred.label_ids,
             index2tag)
-        return {'f1': f1_score(y_true, y_pred), 
+        return {'f1': f1_score(y_true, y_pred),
                 'accuracy': accuracy_score(y_true, y_pred),
                 'precision': precision_score(y_true, y_pred),
                 'recall': recall_score(y_true, y_pred)}
