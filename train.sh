@@ -1,3 +1,13 @@
+#!/bin/bash
+
+: '
+Model training script example. The code will either run on a pre-saved model from the 
+selected folder or download a model from huggingface.co/models based on the 
+model identifier. Training can be continued from the selected checkpoint as well. 
+The full list of training parameters is available here:
+https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py#L135
+'
+
 python3 ./src/model/train.py \
   --model_name_or_path xlm-roberta-base\
   --output_dir ./models/xlm-roberta-base-pie \
