@@ -4,7 +4,7 @@ from transformers import pipeline
 import numpy as np
 import torch
 
-MODEL_NAME = 'Gooogr/xlm-roberta-base-pie'
+MODEL_NAME_OR_PATH = '/var/model'  # mount in docker-compose
 
 
 class TextRequest(BaseModel):
@@ -13,8 +13,8 @@ class TextRequest(BaseModel):
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 nlp = pipeline("token-classification",
-               model=MODEL_NAME,
-               tokenizer=MODEL_NAME,
+               model=MODEL_NAME_OR_PATH,
+               tokenizer=MODEL_NAME_OR_PATH,
                device=device)
 
 app = FastAPI()

@@ -6,3 +6,5 @@ services:
     ports:
       - 80:80
     restart: "no"
+    volumes:
+      - ./models/xlm-roberta-base-pie:/var/model
