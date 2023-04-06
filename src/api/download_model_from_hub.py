@@ -48,4 +48,4 @@ if __name__ == '__main__':
         save_dir = args.save_dir
 
     save_model(args.model_id, save_dir)
-    logging.info('Succesfully saved model and tokenizer')
+    logging.info(f'Succesfully saved model and tokenizer in {save_dir}')
