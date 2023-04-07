@@ -2,7 +2,9 @@ version: '3.2'
 
 services:
   idioms_container:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile-cpu
     ports:
       - 80:80
     restart: "no"
