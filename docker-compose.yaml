@@ -9,4 +9,8 @@ services:
       - 80:80
     restart: "no"
     volumes:
-      - ./models/xlm-roberta-base-pie:/var/model
+      - ${MODEL_PATH}:/var/model
+      ## Previos volume with hardcoded folder. Left as referense.
+      # - ./models/xlm-roberta-base-pie:/var/model
+    environment:
+        - MODEL_PATH
