@@ -77,10 +77,23 @@ Alternatively, you can specify model and training params in `train.sh`
 bash train.sh
 ```
 
-## Docker
-For API inference running
+## Running API
+You can specify model folder manually and run
 ```
 docker-compose up --build
+```
+
+Alternatively, you can use `run_api.sh` <br>
+```
+bash run_api.sh <model_name_or_path> [<force_download>]
+```
+Where:
+* model_name_or_path - path to model folder or model id in the HuggingFace hub
+* force_download - optional parameter (default is False). If True, the model will be forcibly downloaded from the hub, even if it has already been saved.
+
+For example:
+```
+bash run_api.sh Gooogr/xlm-roberta-base-pie 
 ```
 
 

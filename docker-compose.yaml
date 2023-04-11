@@ -2,7 +2,15 @@ version: '3.2'
 
 services:
   idioms_container:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile-cpu
     ports:
       - 80:80
     restart: "no"
+    volumes:
+      - ${MODEL_PATH}:/var/model
+      ## Previos volume with hardcoded folder. Left as referense.
+      # - ./models/xlm-roberta-base-pie:/var/model
+    environment:
+        - MODEL_PATH
