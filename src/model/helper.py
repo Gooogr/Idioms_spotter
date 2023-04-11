@@ -1,7 +1,7 @@
 '''
 Helper functions for Token Classification tasks
 '''
-from typing import Callable
+from typing import Callable, Tuple, List
 import numpy as np
 from transformers import PreTrainedTokenizer
 from transformers.trainer_utils import EvalPrediction
@@ -46,7 +46,7 @@ def allign_predictions(
     predictions: np.ndarray,
     label_ids: np.ndarray,
     index2tag: dict
-) -> tuple[list[list[str]], list[list[str]]]:
+) -> Tuple[List[List[str]], List[List[str]]]:
     """
     Given a batch of model predictions and corresponding true label IDs, align
     the predicted and true labels based on the non-padding and non-masked
