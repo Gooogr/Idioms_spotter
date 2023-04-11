@@ -30,13 +30,6 @@ Thus, model downloading would be skipped. If you want to force re-download \
 of the model from the Hugging Face model hub, use force_download=True"
 fi
 
-# Download model
-# TODO: check full path as well, not only model_id
-if [[ ! -d "$model_name_or_path"  || "$force_download" = true ]]
-then
-    python3 ./src/api/download_model_from_hub.py -m $model_name_or_path
-fi
-
 # Create model path based on model hub id link
 # For example for Gooor/xlm-roberta-base-pie path would be ./models/xlm-roberta-base-pie
 model_folder="$model_name_or_path"
@@ -46,6 +39,15 @@ then
     model_folder="./models/$model_id"
     echo "Model path for docker mount: $model_folder"
 fi
+
+
+# Download model
+# Check possible folders existence or force_download flag
+if [[ ( ! -d "$model_name_or_path" && ! -d "$model_folder" ) || "$force_download" = true ]]
+then
+    python3 ./src/api/download_model_from_hub.py -m $model_name_or_path
+fi
+
 
 # Pass folder path and run docker-compose 
 MODEL_PATH=$model_folder docker-compose up
