@@ -50,7 +50,7 @@ fi
 
 
 # Pass folder path and run docker-compose 
-MODEL_PATH=$model_folder docker-compose up
+MODEL_PATH=$model_folder docker-compose up --build
 
 # How to run:
 # bash run_api.sh <model_name_or_path> [<force_download>]
