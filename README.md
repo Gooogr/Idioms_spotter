@@ -96,6 +96,5 @@ For example:
 bash run_api.sh Gooogr/xlm-roberta-base-pie 
 ```
 
-
 ## License
 Distributed under the MIT License.
