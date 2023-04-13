@@ -1,6 +1,6 @@
 # All packages for training and inference
 datasets >= 1.8.0
-torch >= 1.3
+torch == 2.0.0
 transformers[sentencepiece]
 seqeval
 seaborn
