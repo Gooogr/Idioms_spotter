@@ -1,12 +1,15 @@
 version: '3.2'
 
 services:
-  idioms_container:
+  fastapi:
     build: 
       context: ./src/api/
       dockerfile: Dockerfile-api-cpu
     ports:
-      - 80:80
+      - 8000:8000
+    networks:
+      - deploy_network
+    container_name: fastapi
     restart: "no"
     volumes:
       - ${MODEL_PATH}:/var/model
@@ -14,3 +17,19 @@ services:
       # - ./models/xlm-roberta-base-pie:/var/model
     environment:
         - MODEL_PATH
+
+  streamlit:
+    build: 
+      context: ./src/app/
+      dockerfile: Dockerfile-app
+    ports:
+      - 8501:8501
+    networks:
+      - deploy_network
+    container_name: streamlit
+    depends_on:
+      - fastapi
+
+networks:
+  deploy_network:
+    driver: bridge
