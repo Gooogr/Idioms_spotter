@@ -17,6 +17,12 @@ services:
       # - ./models/xlm-roberta-base-pie:/var/model
     environment:
         - MODEL_PATH
+    healthcheck:
+      # If the command returns 2, docker takes it as an undefined behaviour => 'exit 1'
+      test: curl --fail http://localhost:8000 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   streamlit:
     build: 
@@ -28,7 +34,8 @@ services:
       - deploy_network
     container_name: streamlit
     depends_on:
-      - fastapi
+      fastapi:
+        condition: service_healthy
 
 networks:
   deploy_network:
