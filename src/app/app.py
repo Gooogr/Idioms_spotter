@@ -1,11 +1,13 @@
 import ast
 import time
-import streamlit as st
-from helper import send_request, split_text_by_entities
-from annotated_text import annotated_text
+
 import nltk
+import streamlit as st
+from annotated_text import annotated_text
+from helper import send_request, split_text_by_entities
 from nltk.tokenize import sent_tokenize
-nltk.download('punkt')
+
+nltk.download("punkt")
 
 
 URL = "http://fastapi:8000/predict_ner"
@@ -15,16 +17,16 @@ Sometimes, I get stuck and can't see the forest for the trees. That's when I
 
 st.title("Idioms spotter 👀")
 
-input_text = st.text_input('Source text', DEFAULT_TEXT)
-input_text = input_text.replace('\n', '')
+input_text = st.text_input("Source text", DEFAULT_TEXT)
+input_text = input_text.replace("\n", "")
 
-if st.button('Send constant request'):
+if st.button("Send constant request"):
     # Get API response with NERs tags
     time_start = time.time()
     response = send_request(input_text, URL).text
     time_get_response = time.time()
     response = ast.literal_eval(response)
-    response = response['response']
+    response = response["response"]
 
     # Split text by sentences. We used the same tokenizer in the API side.
     sentences = sent_tokenize(input_text)
@@ -48,10 +50,8 @@ if st.button('Send constant request'):
     annotated_text(text_pairs)
 
     # Calculate iteration time
-    st.write(f'Request time: {time_get_response - time_start :.2f} sec')
-    st.write(f'Total time: {time_finish - time_start :.2f} sec')
+    st.write(f"Request time: {time_get_response - time_start :.2f} sec")
+    st.write(f"Total time: {time_finish - time_start :.2f} sec")
 
 st.write()
-st.write(
-    """Check `localhost:8000/docs` for API documentation."""
-)
+st.write("Check `localhost:8000/docs` for API documentation.")
