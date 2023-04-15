@@ -1,14 +1,23 @@
+"""FastAPI backend"""
+
 import torch
+import numpy as np
 from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import pipeline
-import numpy as np
-from nltk.tokenize import sent_tokenize
 import nltk
+from nltk.tokenize import sent_tokenize
 nltk.download('punkt')
 
-
 MODEL_NAME_OR_PATH = '/var/model'  # mount in docker-compose
+
+app = FastAPI()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+nlp = pipeline("token-classification",
+               model=MODEL_NAME_OR_PATH,
+               tokenizer=MODEL_NAME_OR_PATH,
+               ignore_labels=['O'],
+               device=device)
 
 
 def serialize_dict_with_np_float(preds: dict) -> dict:
@@ -24,15 +33,6 @@ def serialize_dict_with_np_float(preds: dict) -> dict:
             if isinstance(value, np.float32):
                 preds[idx][key] = float(value)
     return preds
-
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-nlp = pipeline("token-classification",
-               model=MODEL_NAME_OR_PATH,
-               tokenizer=MODEL_NAME_OR_PATH,
-               device=device)
-
-app = FastAPI()
 
 
 class TextRequest(BaseModel):
