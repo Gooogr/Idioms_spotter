@@ -46,7 +46,7 @@ def split_text_by_entities(text: str, entities: List[Dict]) -> List[Tuple[str, s
         end = entity["start"]
         if start < end:
             result.append((text[start:end], "O"))
-        result.append((text[end: entity["end"]], entity["entity"]))
+        result.append((text[end : entity["end"]], entity["entity"]))
         start = entity["end"]
     if start < len(text):
         result.append((text[start:], "O"))
