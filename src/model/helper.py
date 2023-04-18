@@ -1,18 +1,17 @@
-'''
+"""
 Helper functions for Token Classification tasks
-'''
-from typing import Callable, Tuple, List
+"""
+from typing import Callable, List, Tuple
+
 import numpy as np
+from datasets.formatting.formatting import LazyBatch
+from seqeval.metrics import accuracy_score, f1_score, precision_score, recall_score
 from transformers import PreTrainedTokenizer
 from transformers.trainer_utils import EvalPrediction
-from datasets.formatting.formatting import LazyBatch
-from seqeval.metrics import (f1_score, accuracy_score,
-                             recall_score, precision_score)
 
 
 def tokenize_and_allign_labels(
-    examples: LazyBatch,
-    tokenizer: PreTrainedTokenizer
+    examples: LazyBatch, tokenizer: PreTrainedTokenizer
 ) -> LazyBatch:
     """
     Apply sentencepiece tokenization to input batch, then allign new tokens
@@ -23,11 +22,11 @@ def tokenize_and_allign_labels(
     Returns:
     - tokenized_inputs (LazyBatch): Processed batch, ready for model training
     """
-    tokenized_inputs = tokenizer(examples['tokens'],
-                                 truncation=True,
-                                 is_split_into_words=True)
+    tokenized_inputs = tokenizer(
+        examples["tokens"], truncation=True, is_split_into_words=True
+    )
     labels = []
-    for idx, label in enumerate(examples['ner_tags']):
+    for idx, label in enumerate(examples["ner_tags"]):
         word_ids = tokenized_inputs.word_ids(batch_index=idx)
         previous_word_idx = None
         label_ids = []
@@ -38,14 +37,12 @@ def tokenize_and_allign_labels(
                 label_ids.append(label[word_idx])
             previous_word_idx = word_idx
         labels.append(label_ids)
-    tokenized_inputs['labels'] = labels
+    tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
 
 def allign_predictions(
-    predictions: np.ndarray,
-    label_ids: np.ndarray,
-    index2tag: dict
+    predictions: np.ndarray, label_ids: np.ndarray, index2tag: dict
 ) -> Tuple[List[List[str]], List[List[str]]]:
     """
     Given a batch of model predictions and corresponding true label IDs, align
@@ -93,14 +90,17 @@ def create_compute_metrics(index2tag: dict) -> Callable[[EvalPrediction]]:
         object as input and returns a dictionary of evaluation metrics,
         including F1 score, accuracy, precision, and recall.
     """
+
     def compute_metrics(eval_pred):
         nonlocal index2tag
         y_pred, y_true = allign_predictions(
-            eval_pred.predictions,
-            eval_pred.label_ids,
-            index2tag)
-        return {'f1': f1_score(y_true, y_pred),
-                'accuracy': accuracy_score(y_true, y_pred),
-                'precision': precision_score(y_true, y_pred),
-                'recall': recall_score(y_true, y_pred)}
+            eval_pred.predictions, eval_pred.label_ids, index2tag
+        )
+        return {
+            "f1": f1_score(y_true, y_pred),
+            "accuracy": accuracy_score(y_true, y_pred),
+            "precision": precision_score(y_true, y_pred),
+            "recall": recall_score(y_true, y_pred),
+        }
+
     return compute_metrics

@@ -1,28 +1,29 @@
 """
 Fine-tuning the HF models for PIEs token classification.
 """
+import logging
 import os
 import sys
-import logging
-import torch
-import wandb
-from helper import tokenize_and_allign_labels, create_compute_metrics
 from dataclasses import dataclass, field
+
 import datasets
-from datasets import load_dataset
 import huggingface_hub
+import torch
 import transformers
-from transformers.trainer_utils import get_last_checkpoint
+import wandb
+from datasets import load_dataset
+from helper import create_compute_metrics, tokenize_and_allign_labels
 from transformers import (
-    HfArgumentParser,
-    TrainingArguments,
-    AutoTokenizer,
     AutoConfig,
-    Trainer,
-    DataCollatorForTokenClassification,
     AutoModelForTokenClassification,
-    set_seed
+    AutoTokenizer,
+    DataCollatorForTokenClassification,
+    HfArgumentParser,
+    Trainer,
+    TrainingArguments,
+    set_seed,
 )
+from transformers.trainer_utils import get_last_checkpoint
 
 # Full list of TrainingArguments available here
 # https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
@@ -31,16 +32,18 @@ from transformers import (
 @dataclass
 class ModelArguments:
     model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model \
-                  identifier from huggingface.co/models"}
+        metadata={
+            "help": "Path to pretrained model or model \
+                  identifier from huggingface.co/models"
+        }
     )
 
 
 @dataclass
 class DataTrainArguments:
     dataset_name: str = field(
-        default='Gooogr/pie_idioms',
-        metadata={"help": "Dataset identifier from huggingface.co/datasets"}
+        default="Gooogr/pie_idioms",
+        metadata={"help": "Dataset identifier from huggingface.co/datasets"},
     )
 
 
@@ -48,9 +51,7 @@ logger = logging.getLogger(__name__)
 wandb.login()
 
 if __name__ == "__main__":
-    parser = HfArgumentParser((TrainingArguments,
-                               DataTrainArguments,
-                               ModelArguments))
+    parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
     train_args, data_args, model_args = parser.parse_args_into_dataclasses()
 
     # Set seed
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
-        handlers=[logging.StreamHandler(sys.stdout)]
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
 
     if train_args.should_log:
@@ -79,12 +80,12 @@ if __name__ == "__main__":
 
     # Load dataset and get tags for model config
     dataset = load_dataset(data_args.dataset_name)
-    tags = dataset['train'].features['ner_tags'].feature
+    tags = dataset["train"].features["ner_tags"].feature
     index2tag = {idx: tag for idx, tag in enumerate(tags.names)}
     tag2index = {tag: idx for idx, tag in enumerate(tags.names)}
 
     # Device selection
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set up tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
@@ -95,11 +96,16 @@ if __name__ == "__main__":
         tokenize_and_allign_labels,
         batched=True,
         fn_kwargs={"tokenizer": tokenizer},
-        remove_columns=['ner_tags', 'tokens', 'idiom', 'is_pie'])
+        remove_columns=["ner_tags", "tokens", "idiom", "is_pie"],
+    )
 
     # Detecting last checkpoint.
     last_checkpoint = None
-    if os.path.isdir(train_args.output_dir) and train_args.do_train and not train_args.overwrite_output_dir:
+    if (
+        os.path.isdir(train_args.output_dir)
+        and train_args.do_train
+        and not train_args.overwrite_output_dir
+    ):
         last_checkpoint = get_last_checkpoint(train_args.output_dir)
         if last_checkpoint is None and len(os.listdir(train_args.output_dir)) > 0:
             raise ValueError(
@@ -118,11 +124,12 @@ if __name__ == "__main__":
         model_args.model_name_or_path,
         num_labels=tags.num_classes,
         id2label=index2tag,
-        label2id=tag2index)
+        label2id=tag2index,
+    )
 
     model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path,
-        config=model_config).to(device)
+        model_args.model_name_or_path, config=model_config
+    ).to(device)
 
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
@@ -131,9 +138,10 @@ if __name__ == "__main__":
         args=train_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        train_dataset=dataset_encoded['train'],
-        eval_dataset=dataset_encoded['validation'],
-        tokenizer=tokenizer)
+        train_dataset=dataset_encoded["train"],
+        eval_dataset=dataset_encoded["validation"],
+        tokenizer=tokenizer,
+    )
 
     # Train model
     if train_args.do_train:
@@ -151,9 +159,10 @@ if __name__ == "__main__":
             # To make sure that we push best, not last model
             best_ckpt_path = trainer.state.best_model_checkpoint
             model = AutoModelForTokenClassification.from_pretrained(
-                best_ckpt_path, config=model_config)
-            repo_name = model_args.model_name_or_path.split('/')[-1]
-            repo_name = f'{repo_name}-pie'
+                best_ckpt_path, config=model_config
+            )
+            repo_name = model_args.model_name_or_path.split("/")[-1]
+            repo_name = f"{repo_name}-pie"
             model.push_to_hub(repo_name)
             tokenizer.push_to_hub(repo_name)
 

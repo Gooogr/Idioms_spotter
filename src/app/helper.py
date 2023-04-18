@@ -1,14 +1,11 @@
 """Helper functions for streamlit web app."""
 
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 import requests
 
 
-def send_request(
-        text: str,
-        url: str,
-        timeout: int = 10
-) -> requests.models.Response:
+def send_request(text: str, url: str, timeout: int = 10) -> requests.models.Response:
     """
     Send a POST request to the specified server URL with the provided text.
 
@@ -21,16 +18,11 @@ def send_request(
     Returns:
      -requests.models.Response: The response object returned by the server.
     """
-    result = requests.post(
-        url, json={"text": text}, timeout=timeout
-    )
+    result = requests.post(url, json={"text": text}, timeout=timeout)
     return result
 
 
-def split_text_by_entities(
-        text: str,
-        entities: List[Dict]
-) -> List[Tuple[str, str]]:
+def split_text_by_entities(text: str, entities: List[Dict]) -> List[Tuple[str, str]]:
     """
     Splits the input text into substrings based on the start and end indices of
     entities and aligns the resulting substrings with their corresponding
@@ -51,11 +43,11 @@ def split_text_by_entities(
     result = []
     start = 0
     for entity in entities:
-        end = entity['start']
+        end = entity["start"]
         if start < end:
-            result.append((text[start:end], 'O'))
-        result.append((text[end:entity['end']], entity['entity']))
-        start = entity['end']
+            result.append((text[start:end], "O"))
+        result.append((text[end : entity["end"]], entity["entity"]))
+        start = entity["end"]
     if start < len(text):
-        result.append((text[start:], 'O'))
+        result.append((text[start:], "O"))
     return result
