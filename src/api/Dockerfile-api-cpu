@@ -1,5 +1,9 @@
 FROM python:3.8-slim-buster
 
+RUN apt update && \
+    apt upgrade &&\
+    apt install curl -y
+
 WORKDIR /code
 COPY requirements-api-cpu.txt /code/requirements.txt
 
@@ -7,10 +11,6 @@ RUN python -m venv /venv && \
     . /venv/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /code/requirements.txt
-
-RUN apt update && \
-    apt upgrade &&\
-    apt install curl -y
 
 COPY . /code/api
 CMD ["/venv/bin/python", "-m", "uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "8000"]
