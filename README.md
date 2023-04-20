@@ -85,7 +85,7 @@ docker-compose up --build
 
 Alternatively, you can use `run_api.sh` <br>
 ```
-bash run_api.sh <model_name_or_path> [<force_download>]
+bash run_app.sh <model_name_or_path> [<force_download>]
 ```
 Where:
 * model_name_or_path - path to model folder or model id in the HuggingFace hub
