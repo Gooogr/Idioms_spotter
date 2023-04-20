@@ -93,7 +93,7 @@ Where:
 
 For example:
 ```
-bash run_api.sh Gooogr/xlm-roberta-base-pie 
+bash run_app.sh Gooogr/xlm-roberta-base-pie 
 ```
 
 ## License

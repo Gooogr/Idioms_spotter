@@ -45,7 +45,7 @@ fi
 # Check possible folders existence or force_download flag
 if [[ ( ! -d "$model_name_or_path" && ! -d "$model_folder" ) || "$force_download" = true ]]
 then
-    python3 ./src/api/download_model_from_hub.py -m $model_name_or_path
+    python3 ./src/scripts/download_model_from_hub.py -m $model_name_or_path
 fi
 
 

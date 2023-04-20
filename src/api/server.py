@@ -1,14 +1,26 @@
+"""FastAPI backend"""
+
+import nltk
+import numpy as np
 import torch
 from fastapi import FastAPI
+from nltk.tokenize import sent_tokenize
 from pydantic import BaseModel
 from transformers import pipeline
-import numpy as np
-from nltk.tokenize import sent_tokenize
-import nltk
-nltk.download('punkt')
 
+nltk.download("punkt")
 
-MODEL_NAME_OR_PATH = '/var/model'  # mount in docker-compose
+MODEL_NAME_OR_PATH = "/var/model"  # mount in docker-compose
+
+app = FastAPI()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+nlp = pipeline(
+    "token-classification",
+    model=MODEL_NAME_OR_PATH,
+    tokenizer=MODEL_NAME_OR_PATH,
+    ignore_labels=["O"],
+    device=device,
+)
 
 
 def serialize_dict_with_np_float(preds: dict) -> dict:
@@ -26,15 +38,6 @@ def serialize_dict_with_np_float(preds: dict) -> dict:
     return preds
 
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-nlp = pipeline("token-classification",
-               model=MODEL_NAME_OR_PATH,
-               tokenizer=MODEL_NAME_OR_PATH,
-               device=device)
-
-app = FastAPI()
-
-
 class TextRequest(BaseModel):
     text: str
 
@@ -49,7 +52,8 @@ def predict_ner(text_request: TextRequest):
     preds = nlp(sent_tokenize(text_request.text))
     # handle non-serializable np.float32 -> float
     preds = [serialize_dict_with_np_float(item) for item in preds]
-    return {'response': preds}
+    return {"response": preds}
+
 
 # Run from the command line
 # uvicorn src.api.main:app --reload --host=127.0.0.1 --port=8000
