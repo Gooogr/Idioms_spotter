@@ -11,10 +11,9 @@ The dataset is based on MAGPIE and PIE corpuses:
 * [magpie-corpus](https://github.com/hslh/magpie-corpus) 
 * [pie-annotation](https://github.com/hslh/pie-annotation) 
 
-The full data preparation pipeline available in [data_preparation](https://github.com/Gooogr/Idioms_spotter/blob/main/notebooks/data_preparation.ipynb) notebook. To obtain the json source files, run these commands from the root of the project:
+The full data preparation pipeline available in [data_preparation](https://github.com/Gooogr/Idioms_spotter/blob/main/notebooks/data_preparation.ipynb) notebook. To obtain the json source files, run:
 ```
-curl -o ./data/raw/pie-corpus.json https://raw.githubusercontent.com/hslh/pie-annotation/master/PIE_annotations_all_no_sentences.json
-curl -o ./data/raw/magpie-corpus.jsonl https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl
+bash scripts/download_raw_datasets.sh 
 ```
 Note that the PIE corpus needs to be further enriched with data in order to obtain suggestions and context. More details can be found [here](https://github.com/hslh/pie-annotation#contents--usage)
 
@@ -93,6 +92,7 @@ Where:
 
 For example:
 ```
+chmod +x run_app.sh
 bash run_app.sh Gooogr/xlm-roberta-base-pie 
 ```
 

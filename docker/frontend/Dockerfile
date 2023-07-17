@@ -1,14 +1,14 @@
 FROM python:3.8-slim-buster
 
 WORKDIR /code
-COPY requirements-app.txt /code/requirements.txt
+COPY docker/frontend/requirements.txt /code/requirements.txt
 
 RUN python -m venv /venv && \
     . /venv/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /code/requirements.txt
 
-COPY . /code/app
+COPY src/app /code/app
 
 EXPOSE 8501
 

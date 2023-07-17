@@ -3,8 +3,8 @@ version: '3.2'
 services:
   fastapi:
     build: 
-      context: ./src/api/
-      dockerfile: Dockerfile-api-cpu
+      context: .
+      dockerfile: docker/api/Dockerfile
     ports:
       - 8000:8000
     networks:
@@ -26,8 +26,8 @@ services:
 
   streamlit:
     build: 
-      context: ./src/app/
-      dockerfile: Dockerfile-app
+      context: .
+      dockerfile: docker/frontend/Dockerfile
     ports:
       - 8501:8501
     networks:

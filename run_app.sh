@@ -45,12 +45,12 @@ fi
 # Check possible folders existence or force_download flag
 if [[ ( ! -d "$model_name_or_path" && ! -d "$model_folder" ) || "$force_download" = true ]]
 then
-    python3 ./src/scripts/download_model_from_hub.py -m $model_name_or_path
+    python3 ./scripts/download_model_from_hub.py -m $model_name_or_path
 fi
 
 
 # Pass folder path and run docker-compose 
-MODEL_PATH=$model_folder docker-compose up --build
+MODEL_PATH=$model_folder docker compose up --build
 
 # How to run:
 # bash run_api.sh <model_name_or_path> [<force_download>]
