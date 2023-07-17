@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "idioms-spotter"
+version = "0.1.0"
+description = "Transformers for PIEs tagging"
+authors = ["grigoriy <gusarovga@ya.ru>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1, <3.9.dev0"
+pandas = "2.0.3"
+transformers = "4.30.2"
+sentencepiece = "0.1.99"
+torch = "2.0.0"
+seqeval = "^1.2.2"
+wandb = "^0.15.5"
+datasets = "^2.13.1"
+
+
+[tool.poetry.group.dev.dependencies]
+nltk = "3.8.1"
+streamlit = "1.24.1"
+st-annotated-text = "4.0.0"
+fastapi = "0.100.0"
+uvicorn = "0.23.0"
+notebook = "^6.5.4"
+ipywidgets = "^8.0.7"
+matplotlib = "^3.7.2"
+seaborn = "^0.12.2"
+scikit-learn = "^1.3.0"
+
+
+[tool.poetry.group.tools.dependencies]
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+black = "^23.7.0"
+pylint = "^2.17.4"
+mypy = "^1.4.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
