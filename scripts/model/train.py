@@ -1,10 +1,11 @@
+# pylint: disable=C0103,W0632
+
 """
-Fine-tuning the HF models for PIEs token classification.
+Fine-tuning HF models for PIEs token classification.
 """
 import logging
 import os
 import sys
-import typing as tp
 from dataclasses import dataclass, field
 
 import datasets
@@ -12,7 +13,7 @@ import huggingface_hub
 import torch
 import transformers
 from datasets import load_dataset
-from helper import (
+from train_helper import (
     create_compute_metrics,
     get_tags_classification_weights,
     tokenize_and_allign_labels,
@@ -63,7 +64,7 @@ class CustomTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
         # compute custom loss
-        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weights))
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(self.class_weights))
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
@@ -133,7 +134,7 @@ if __name__ == "__main__":
                 f"Output directory ({train_args.output_dir}) already exists "
                 "and is not empty. Use --overwrite_output_dir to overcome."
             )
-        elif last_checkpoint is not None and train_args.resume_from_checkpoint is None:
+        if last_checkpoint is not None and train_args.resume_from_checkpoint is None:
             logger.info(
                 f"Checkpoint detected, resuming training at {last_checkpoint}."
                 " To avoid this behavior, change the `--output_dir` or add "
@@ -148,30 +149,29 @@ if __name__ == "__main__":
         label2id=tag2index,
     )
 
-    model = AutoModelForTokenClassification.from_pretrained(
+    classification_model = AutoModelForTokenClassification.from_pretrained(
         model_args.model_name_or_path, config=model_config
     ).to(device)
 
-    # Compute balanced weights for loss function
-    class_weights = get_tags_classification_weights(dataset["train"], "ner_tags")
-
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
+    weights = get_tags_classification_weights(dataset["train"], "ner_tags")
     trainer = CustomTrainer(
-        model=model,
+        model=classification_model,
         args=train_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         train_dataset=dataset_encoded["train"],
         eval_dataset=dataset_encoded["validation"],
         tokenizer=tokenizer,
-        class_weights=class_weights,
+        class_weights=weights,
     )
 
     # Train model
     if train_args.do_train:
         logger.info("*** Train model ***")
-        checkpoint = None
+
+        checkpoint = None  # pylint: disable=C0103
         if train_args.resume_from_checkpoint is not None:
             checkpoint = train_args.resume_from_checkpoint
         elif last_checkpoint is not None:
@@ -183,12 +183,12 @@ if __name__ == "__main__":
             huggingface_hub.login()
             # To make sure that we push best, not last model
             best_ckpt_path = trainer.state.best_model_checkpoint
-            model = AutoModelForTokenClassification.from_pretrained(
+            classification_model = AutoModelForTokenClassification.from_pretrained(
                 best_ckpt_path, config=model_config
             )
             repo_name = model_args.model_name_or_path.split("/")[-1]
             repo_name = f"{repo_name}-pie"
-            model.push_to_hub(repo_name)
+            classification_model.push_to_hub(repo_name)
             tokenizer.push_to_hub(repo_name)
 
     # Evaluate model

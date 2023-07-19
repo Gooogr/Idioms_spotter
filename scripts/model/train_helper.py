@@ -1,7 +1,7 @@
 """
 Helper functions for Token Classification tasks
 """
-from typing import Callable, List, Tuple, Dict
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from datasets import Dataset
@@ -78,7 +78,9 @@ def allign_predictions(
     return pred_list, label_list
 
 
-def create_compute_metrics(index2tag: dict) -> Callable[[EvalPrediction], Dict[str, float]]:
+def create_compute_metrics(
+    index2tag: dict,
+) -> Callable[[EvalPrediction], Dict[str, float]]:
     """
     Create and return a function for computing evaluation metrics for a
     sequence tagging model, given a mapping from label indices to label names.
@@ -122,7 +124,7 @@ def get_tags_classification_weights(
     """
     all_tags = dataset[labels_key]
     # Count amount of each NER tag
-    count_dict = {}
+    count_dict: Dict[int, float] = {}
     for item in all_tags:
         for tag in item:
             count_dict[tag] = count_dict.get(tag, 0) + 1

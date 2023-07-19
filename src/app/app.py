@@ -30,7 +30,7 @@ if st.button("Send constant request"):
     response = send_request(input_text, URL).text
     time_get_response = time.time()
     response = ast.literal_eval(response)
-    response = response["response"]
+    response = response["response"]  # type: ignore
 
     # Split text by sentences. We used the same tokenizer in the API side.
     sentences = sent_tokenize(input_text)
@@ -38,7 +38,7 @@ if st.button("Send constant request"):
     # Allign NER label with chuncks of text
     result = []
     for sent, entities in zip(sentences, response):
-        chunks = split_text_by_entities(sent, entities)
+        chunks = split_text_by_entities(sent, entities)  # type: ignore
         result.extend(chunks)
 
     # Skip "O" tags
@@ -47,7 +47,7 @@ if st.button("Send constant request"):
         if label != "O":
             text_pairs.append((text, label))
         else:
-            text_pairs.append(text)
+            text_pairs.append(text)  # type: ignore
     time_finish = time.time()
 
     # Show colored text
