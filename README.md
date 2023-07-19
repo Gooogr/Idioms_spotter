@@ -11,23 +11,22 @@ The dataset is based on MAGPIE and PIE corpuses:
 * [magpie-corpus](https://github.com/hslh/magpie-corpus) 
 * [pie-annotation](https://github.com/hslh/pie-annotation) 
 
-The full data preparation pipeline available in [data_preparation](https://github.com/Gooogr/Idioms_spotter/blob/main/notebooks/data_preparation.ipynb) notebook. To obtain the json source files, run these commands from the root of the project:
+The full data preparation pipeline available in [data_preparation](https://github.com/Gooogr/Idioms_spotter/blob/main/notebooks/data_preparation.ipynb) notebook. To obtain the json source files, run:
 ```
-curl -o ./data/raw/pie-corpus.json https://raw.githubusercontent.com/hslh/pie-annotation/master/PIE_annotations_all_no_sentences.json
-curl -o ./data/raw/magpie-corpus.jsonl https://raw.githubusercontent.com/hslh/magpie-corpus/master/MAGPIE_unfiltered.jsonl
+bash scripts/download_raw_datasets.sh 
 ```
 Note that the PIE corpus needs to be further enriched with data in order to obtain suggestions and context. More details can be found [here](https://github.com/hslh/pie-annotation#contents--usage)
 
 You can download both raw and already enriched data from [here](https://drive.google.com/file/d/1Hvlqp3VU9DeiZeocJNzG4GaxGduOyFAG/view?usp=sharing).
 
 ## Supported models
-The following models are supported for training: <br>
+The list of supported for training models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
+
+For example, the following models are trainable: <br>
 * BERT
 * RoBERTa
 * DistilBERT
 * ConvBERT
-
-In general, the list of models is determined by their support in the [AutoModelForTokenClassification](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModelForTokenClassification) and AutoTokenizer classes.
 
 ## Fine-tuned models
 The following fine-tuned models are available on Hugging Face model hub:
@@ -42,16 +41,15 @@ All metrics are obtained on the validation part of the dataset
 
 To set up the environment, follow these steps:
 ```
-conda create -n idioms python=3.9
+conda create -n idioms python=3.8
 conda activate idioms
-pip install -r requirements.txt
-# If you want to use additional project's notebooks
-pip install notebook ipywidgets
+pip3 install poetry==1.5.1
+poetry install --only main
 ```
 
 The following example shows how to fine-tune XLM-RoBERTa:
 ```
-python3 ./src/train.py \
+python3 ./sripts/model/train.py \
   --model_name_or_path xlm-roberta-base\
   --output_dir ./models/xlm-roberta-base-pie \
   --num_train_epochs 10 \
@@ -77,23 +75,33 @@ Alternatively, you can specify model and training params in `train.sh`
 bash train.sh
 ```
 
-## Running API
-You can specify model folder manually and run
-```
-docker-compose up --build
-```
+## Running web app with API
+The application consists of two containers:
+* Model backend based on FastAPI
+* Web application build on Streamlit
 
-Alternatively, you can use `run_api.sh` <br>
+Use `run_api.sh` to start it. Note, that script automatically download model from the Hugging Face hub if it doesn't saved in `/models` folder<br>
 ```
 bash run_app.sh <model_name_or_path> [<force_download>]
 ```
 Where:
 * model_name_or_path - path to model folder or model id in the HuggingFace hub
-* force_download - optional parameter (default is False). If True, the model will be forcibly downloaded from the hub, even if it has already been saved.
+* force_download - optional parameter (default is False). If True, the model will be forcibly downloaded from the hub, even if it has already been saved.<br>
 
 For example:
 ```
+chmod +x run_app.sh
 bash run_app.sh Gooogr/xlm-roberta-base-pie 
+```
+
+Alternatively, you can specify path to pre-saved model folder by passing it as environment variable in `docker-compose.yaml`:
+```
+MODEL_PATH=<relative_path_to_model> docker compose up --build
+```
+
+For example:
+```
+MODEL_PATH=./models/xlm-roberta-base-pie docker compose up --build
 ```
 
 ## License
