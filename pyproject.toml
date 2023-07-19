@@ -16,6 +16,7 @@ torch = "2.0.0"
 seqeval = "^1.2.2"
 wandb = "^0.15.5"
 datasets = "^2.13.1"
+accelerate = "^0.21.0"
 
 
 [tool.poetry.group.dev.dependencies]

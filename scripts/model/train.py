@@ -4,15 +4,19 @@ Fine-tuning the HF models for PIEs token classification.
 import logging
 import os
 import sys
+import typing as tp
 from dataclasses import dataclass, field
 
 import datasets
 import huggingface_hub
 import torch
 import transformers
-import wandb
 from datasets import load_dataset
-from helper import create_compute_metrics, tokenize_and_allign_labels
+from helper import (
+    create_compute_metrics,
+    get_tags_classification_weights,
+    tokenize_and_allign_labels,
+)
 from transformers import (
     AutoConfig,
     AutoModelForTokenClassification,
@@ -25,6 +29,8 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
+import wandb
+
 # Full list of TrainingArguments available here
 # https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 
@@ -33,9 +39,8 @@ from transformers.trainer_utils import get_last_checkpoint
 class ModelArguments:
     model_name_or_path: str = field(
         metadata={
-            "help": "Path to pretrained model or model \
-                  identifier from huggingface.co/models"
-        }
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        },
     )
 
 
@@ -45,6 +50,22 @@ class DataTrainArguments:
         default="Gooogr/pie_idioms",
         metadata={"help": "Dataset identifier from huggingface.co/datasets"},
     )
+
+
+class CustomTrainer(Trainer):
+    def __init__(self, class_weights, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+
+    def compute_loss(self, model, inputs, return_outputs: bool = False):
+        labels = inputs.get("labels")
+        # forward pass
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        # compute custom loss
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weights))
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
 
 
 logger = logging.getLogger(__name__)
@@ -131,9 +152,12 @@ if __name__ == "__main__":
         model_args.model_name_or_path, config=model_config
     ).to(device)
 
+    # Compute balanced weights for loss function
+    class_weights = get_tags_classification_weights(dataset["train"], "ner_tags")
+
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
-    trainer = Trainer(
+    trainer = CustomTrainer(
         model=model,
         args=train_args,
         data_collator=data_collator,
@@ -141,6 +165,7 @@ if __name__ == "__main__":
         train_dataset=dataset_encoded["train"],
         eval_dataset=dataset_encoded["validation"],
         tokenizer=tokenizer,
+        class_weights=class_weights,
     )
 
     # Train model
