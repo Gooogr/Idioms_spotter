@@ -2,6 +2,7 @@
 An auxiliary script for downloading and saving a pre-trained model for its
 further inference in a docker container.
 """
+
 import argparse
 import logging
 import os
@@ -47,9 +48,9 @@ if __name__ == "__main__":
 
     # by default - save to /model/model_id folder
     if args.save_dir is None:
-        save_dir = os.path.join("./models/", args.model_id.split("/")[-1])
+        save_dir_path = os.path.join("./models/", args.model_id.split("/")[-1])
     else:
-        save_dir = args.save_dir
+        save_dir_path = args.save_dir
 
-    save_model(args.model_id, save_dir)
-    logging.info(f"Succesfully saved model and tokenizer in {save_dir}")
+    save_model(args.model_id, save_dir_path)
+    logging.info(f"Succesfully saved model and tokenizer in {save_dir_path}")

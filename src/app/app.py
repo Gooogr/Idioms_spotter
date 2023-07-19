@@ -1,3 +1,7 @@
+"""
+Streamlit web application page
+"""
+
 import ast
 import time
 

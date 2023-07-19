@@ -80,23 +80,28 @@ The application consists of two containers:
 * Model backend based on FastAPI
 * Web application build on Streamlit
 
-You can specify model folder manually inside `docker-compose.yaml`and run
-```
-docker-compose up --build
-```
-
-Alternatively, you can use `run_api.sh` <br>
+Use `run_api.sh` to start it. Note, that script automatically download model from the Hugging Face hub if it doesn't saved in `/models` folder<br>
 ```
 bash run_api.sh <model_name_or_path> [<force_download>]
 ```
 Where:
 * model_name_or_path - path to model folder or model id in the HuggingFace hub
-* force_download - optional parameter (default is False). If True, the model will be forcibly downloaded from the hub, even if it has already been saved.
+* force_download - optional parameter (default is False). If True, the model will be forcibly downloaded from the hub, even if it has already been saved.<br>
 
 For example:
 ```
 chmod +x run_app.sh
 bash run_app.sh Gooogr/xlm-roberta-base-pie 
+```
+
+Alternatively, you can specify path to pre-saved model folder by passing it as environment variable in `docker-compose.yaml`:
+```
+MODEL_PATH=<relative_path_to_model> docker compose up --build
+```
+
+For example:
+```
+MODEL_PATH=./models/xlm-roberta-base-pie docker compose up --build
 ```
 
 ## License
