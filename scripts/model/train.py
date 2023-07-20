@@ -54,9 +54,10 @@ class DataTrainArguments:
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, class_weights, *args, **kwargs):
+    def __init__(self, class_weights, device, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights
+        self.device = device
 
     def compute_loss(self, model, inputs, return_outputs: bool = False):
         labels = inputs.get("labels")
@@ -64,7 +65,7 @@ class CustomTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
         # compute custom loss
-        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(self.class_weights))
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(self.class_weights)).to(self.device)
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
@@ -165,6 +166,7 @@ if __name__ == "__main__":
         eval_dataset=dataset_encoded["validation"],
         tokenizer=tokenizer,
         class_weights=weights,
+        device=device,
     )
 
     # Train model
