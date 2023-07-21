@@ -3,18 +3,16 @@
 """
 Fine-tuning HF models for PIEs token classification.
 """
-import logging
 import os
-import sys
 from dataclasses import dataclass, field
 
-import datasets
 import huggingface_hub
 import torch
-import transformers
 from datasets import load_dataset
-from train_helper import (
+from model_helper import (
     create_compute_metrics,
+    get_device,
+    get_logger,
     get_tags_classification_weights,
     tokenize_and_allign_labels,
 )
@@ -31,6 +29,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 
 import wandb
+
+wandb.login()
 
 # Full list of TrainingArguments available here
 # https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
@@ -72,36 +72,19 @@ class CustomTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-logger = logging.getLogger(__name__)
-wandb.login()
-
 if __name__ == "__main__":
     parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
     train_args, data_args, model_args = parser.parse_args_into_dataclasses()
 
+    # Setup logging
+    logger = get_logger(train_args)
+    logger.info(f"Training/evaluation parameters {train_args}")
+
     # Set seed
     set_seed(train_args.seed)
 
-    # Setup logging
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-
-    if train_args.should_log:
-        # The default of training_args.log_level is passive, so we set
-        # log level at info here to have that default.
-        transformers.utils.logging.set_verbosity_info()
-
-    log_level = train_args.get_process_log_level()
-    logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
-
-    logger.info(f"Training/evaluation parameters {train_args}")
+    # Device selection
+    device = get_device(train_args)
 
     # Load dataset and get tags for model config
     dataset = load_dataset(data_args.dataset_name)
@@ -109,11 +92,21 @@ if __name__ == "__main__":
     index2tag = {idx: tag for idx, tag in enumerate(tags.names)}
     tag2index = {tag: idx for idx, tag in enumerate(tags.names)}
 
-    # Device selection
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Set up model
+    model_config = AutoConfig.from_pretrained(
+        model_args.model_name_or_path,
+        num_labels=tags.num_classes,
+        id2label=index2tag,
+        label2id=tag2index,
+    )
+
+    classification_model = AutoModelForTokenClassification.from_pretrained(
+        model_args.model_name_or_path, config=model_config
+    ).to(device)
 
     # Set up tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
+
     data_collator = DataCollatorForTokenClassification(tokenizer)
 
     # Convert word tokens -> sentencepice tokens
@@ -143,18 +136,6 @@ if __name__ == "__main__":
                 " To avoid this behavior, change the `--output_dir` or add "
                 "`--overwrite_output_dir` to train from scratch."
             )
-
-    # Set up model
-    model_config = AutoConfig.from_pretrained(
-        model_args.model_name_or_path,
-        num_labels=tags.num_classes,
-        id2label=index2tag,
-        label2id=tag2index,
-    )
-
-    classification_model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path, config=model_config
-    ).to(device)
 
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)

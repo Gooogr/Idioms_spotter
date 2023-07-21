@@ -1,13 +1,17 @@
 """
 Helper functions for Token Classification tasks
 """
-from typing import Callable, Dict, List, Tuple
+import logging
+import sys
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
+import torch
+import transformers
 from datasets import Dataset
 from datasets.formatting.formatting import LazyBatch
 from seqeval.metrics import accuracy_score, f1_score, precision_score, recall_score
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizer, TrainingArguments
 from transformers.trainer_utils import EvalPrediction
 
 
@@ -116,11 +120,11 @@ def get_tags_classification_weights(
     Calculate class weights based on the number of objects in each class.
 
     Args:
-    - dataset (Dataset) - input Hugging Face Dataset object.
-    - labels_key (str) - key for NER tags inside Dataset.
+    - dataset (Dataset): input Hugging Face Dataset object.
+    - labels_key (str): key for NER tags inside Dataset.
 
     Returns:
-    - List[float] - list with weigts for each unique NER tag.
+    - List[float]: list with weigts for each unique NER tag.
     """
     all_tags = dataset[labels_key]
     # Count amount of each NER tag
@@ -133,3 +137,40 @@ def get_tags_classification_weights(
     # Calculate weights
     result = [total_amount / item for item in count_dict.values()]
     return result
+
+
+def get_logger(train_args: TrainingArguments) -> logging.Logger:
+    """
+    Set up root logger based on TrainingArguments.
+
+    Args:
+    - train_args(TrainingArguments): The TrainingArguments object containing training settings.
+
+    Returns:
+    - Logger object with selected information level and format
+    """
+    log_level = train_args.get_process_log_level()
+    transformers.utils.logging.set_verbosity(log_level)
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=log_level,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    return logging.getLogger(__name__)
+
+
+def get_device(train_args: TrainingArguments) -> Union[str, torch.device]:
+    """
+    Determines and returns the appropriate device for training based on the TrainingArguments.
+
+    Args:
+    - train_args (TrainingArguments): The TrainingArguments object containing training settings.
+
+    Returns:
+    - Union[str, torch.device]: The selected device.
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if train_args.no_cuda:
+        device = torch.device("cpu")
+    return device
