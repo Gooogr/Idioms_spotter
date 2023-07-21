@@ -72,7 +72,7 @@ The code will either run on a pre-saved model from the selected folder or downlo
 
 Alternatively, you can specify model and training params in `train.sh`
 ```
-bash train.sh
+bash scripts/train.sh
 ```
 
 ## Running web app with API
