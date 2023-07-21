@@ -8,10 +8,10 @@ from typing import Callable, Dict, List, Tuple, Union
 import numpy as np
 import torch
 import transformers
-from datasets import Dataset
+from datasets import ClassLabel, Dataset
 from datasets.formatting.formatting import LazyBatch
 from seqeval.metrics import accuracy_score, f1_score, precision_score, recall_score
-from transformers import PreTrainedTokenizer, TrainingArguments
+from transformers import AutoConfig, PreTrainedTokenizer, TrainingArguments
 from transformers.trainer_utils import EvalPrediction
 
 
@@ -174,3 +174,31 @@ def get_device(train_args: TrainingArguments) -> Union[str, torch.device]:
     if train_args.no_cuda:
         device = torch.device("cpu")
     return device
+
+
+def get_model_config(model_name_or_path: str, tags: ClassLabel) -> AutoConfig:
+    """
+    Loads the model configuration for a given model name or path and a set of tags (class labels).
+
+    Args:
+    - model_name_or_path (str): The HuggingFace hub ID or path of the pre-trained model
+        to load the configuration for.
+    - tags (ClassLabel): A ClassLabel object containing the list of class labels for the model.
+
+    Returns:
+    - AutoConfig: The AutoConfig object containing the loaded model configuration.
+
+    Example:
+        >>> tags = ClassLabel(names=["positive", "negative", "neutral"], num_classes=3)
+        >>> config = get_model_config("bert-base-uncased", tags)
+    """
+    index2tag = {idx: tag for idx, tag in enumerate(tags.names)}
+    tag2index = {tag: idx for idx, tag in enumerate(tags.names)}
+
+    model_config = AutoConfig.from_pretrained(
+        model_name_or_path,
+        num_labels=tags.num_classes,
+        id2label=index2tag,
+        label2id=tag2index,
+    )
+    return model_config

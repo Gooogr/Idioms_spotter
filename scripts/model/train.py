@@ -2,6 +2,8 @@
 
 """
 Fine-tuning HF models for PIEs token classification.
+Full list of TrainingArguments available here:
+https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 """
 import os
 from dataclasses import dataclass, field
@@ -13,11 +15,11 @@ from model_helper import (
     create_compute_metrics,
     get_device,
     get_logger,
+    get_model_config,
     get_tags_classification_weights,
     tokenize_and_allign_labels,
 )
 from transformers import (
-    AutoConfig,
     AutoModelForTokenClassification,
     AutoTokenizer,
     DataCollatorForTokenClassification,
@@ -31,9 +33,6 @@ from transformers.trainer_utils import get_last_checkpoint
 import wandb
 
 wandb.login()
-
-# Full list of TrainingArguments available here
-# https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 
 
 @dataclass
@@ -86,23 +85,18 @@ if __name__ == "__main__":
     # Device selection
     device = get_device(train_args)
 
-    # Load dataset and get tags for model config
+    # Load dataset and encode tags
     dataset = load_dataset(data_args.dataset_name)
     tags = dataset["train"].features["ner_tags"].feature
     index2tag = {idx: tag for idx, tag in enumerate(tags.names)}
     tag2index = {tag: idx for idx, tag in enumerate(tags.names)}
 
     # Set up model
-    model_config = AutoConfig.from_pretrained(
-        model_args.model_name_or_path,
-        num_labels=tags.num_classes,
-        id2label=index2tag,
-        label2id=tag2index,
-    )
-
-    classification_model = AutoModelForTokenClassification.from_pretrained(
+    model_config = get_model_config(model_args.model_name_or_path, tags)
+    model = AutoModelForTokenClassification.from_pretrained(
         model_args.model_name_or_path, config=model_config
-    ).to(device)
+    )
+    model = model.to(device)
 
     # Set up tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
@@ -141,7 +135,7 @@ if __name__ == "__main__":
     compute_metrics = create_compute_metrics(index2tag)
     weights = get_tags_classification_weights(dataset["train"], "ner_tags")
     trainer = CustomTrainer(
-        model=classification_model,
+        model=model,
         args=train_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
@@ -156,7 +150,7 @@ if __name__ == "__main__":
     if train_args.do_train:
         logger.info("*** Train model ***")
 
-        checkpoint = None  # pylint: disable=C0103
+        checkpoint = None
         if train_args.resume_from_checkpoint is not None:
             checkpoint = train_args.resume_from_checkpoint
         elif last_checkpoint is not None:
