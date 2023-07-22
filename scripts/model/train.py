@@ -21,7 +21,7 @@ from model_helper import (
     get_tags_classification_weights,
     tokenize_and_allign_labels,
 )
-from sklearn.metrics import confusion_matrix
+from report_helper import print_classification_report
 from transformers import (
     AutoModelForTokenClassification,
     AutoTokenizer,
@@ -179,9 +179,7 @@ if __name__ == "__main__":
         logger.info(eval_metrics)
 
         # Create confusion matrix for each class
-        eval_data = dataset_encoded[
-            "validation"
-        ]  # .select(range(100)) # Range 10 only for DEBUG
+        eval_data = dataset_encoded["validation"]
         true_ids = eval_data["labels"]
         predictions_padded = trainer.predict(eval_data).predictions
         predicted_ids_padded = np.argmax(predictions_padded, axis=2)
@@ -202,13 +200,11 @@ if __name__ == "__main__":
         tokens_df = report_df.explode(column=list(report_df.columns), ignore_index=True)
         tokens_df = tokens_df.query("true_labels != 'IGN'")
 
-        print(
-            confusion_matrix(
-                y_true=tokens_df["true_labels"],
-                y_pred=tokens_df["predicted_labels"],
-                labels=[
-                    label for _, label in sorted(index2tag.items(), key=lambda x: x[0])
-                ],
-                normalize="true",
-            )
+        print_classification_report(
+            y_true=tokens_df["true_labels"],
+            y_pred=tokens_df["predicted_labels"],
+            labels=[
+                label for _, label in sorted(index2tag.items(), key=lambda x: x[0])
+            ],
+            normalize="true",
         )
