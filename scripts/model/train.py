@@ -2,24 +2,27 @@
 
 """
 Fine-tuning HF models for PIEs token classification.
+Full list of TrainingArguments available here:
+https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 """
-import logging
 import os
-import sys
 from dataclasses import dataclass, field
 
-import datasets
 import huggingface_hub
+import numpy as np
+import pandas as pd
 import torch
-import transformers
 from datasets import load_dataset
-from train_helper import (
+from model_helper import (
     create_compute_metrics,
+    get_device,
+    get_logger,
+    get_model_config,
     get_tags_classification_weights,
     tokenize_and_allign_labels,
 )
+from report_helper import print_classification_report
 from transformers import (
-    AutoConfig,
     AutoModelForTokenClassification,
     AutoTokenizer,
     DataCollatorForTokenClassification,
@@ -32,8 +35,7 @@ from transformers.trainer_utils import get_last_checkpoint
 
 import wandb
 
-# Full list of TrainingArguments available here
-# https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
+wandb.login()
 
 
 @dataclass
@@ -72,47 +74,34 @@ class CustomTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-logger = logging.getLogger(__name__)
-wandb.login()
-
 if __name__ == "__main__":
     parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
     train_args, data_args, model_args = parser.parse_args_into_dataclasses()
 
+    # Setup logging
+    logger = get_logger(train_args)
+    logger.info(f"Training/evaluation parameters {train_args}")
+
     # Set seed
     set_seed(train_args.seed)
 
-    # Setup logging
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
+    # Device selection
+    device = get_device(train_args)
 
-    if train_args.should_log:
-        # The default of training_args.log_level is passive, so we set
-        # log level at info here to have that default.
-        transformers.utils.logging.set_verbosity_info()
-
-    log_level = train_args.get_process_log_level()
-    logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
-
-    logger.info(f"Training/evaluation parameters {train_args}")
-
-    # Load dataset and get tags for model config
+    # Load dataset and encode tags
     dataset = load_dataset(data_args.dataset_name)
     tags = dataset["train"].features["ner_tags"].feature
     index2tag = {idx: tag for idx, tag in enumerate(tags.names)}
     tag2index = {tag: idx for idx, tag in enumerate(tags.names)}
 
-    # Device selection
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Set up model
+    model_config = get_model_config(model_args.model_name_or_path, tags)
+    model = AutoModelForTokenClassification.from_pretrained(
+        model_args.model_name_or_path, config=model_config
+    )
+    model = model.to(device)
 
-    # Set up tokenizer
+    # Set up tokenizer and collator
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
     data_collator = DataCollatorForTokenClassification(tokenizer)
 
@@ -144,23 +133,11 @@ if __name__ == "__main__":
                 "`--overwrite_output_dir` to train from scratch."
             )
 
-    # Set up model
-    model_config = AutoConfig.from_pretrained(
-        model_args.model_name_or_path,
-        num_labels=tags.num_classes,
-        id2label=index2tag,
-        label2id=tag2index,
-    )
-
-    classification_model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path, config=model_config
-    ).to(device)
-
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
     weights = get_tags_classification_weights(dataset["train"], "ner_tags")
     trainer = CustomTrainer(
-        model=classification_model,
+        model=model,
         args=train_args,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
@@ -175,7 +152,7 @@ if __name__ == "__main__":
     if train_args.do_train:
         logger.info("*** Train model ***")
 
-        checkpoint = None  # pylint: disable=C0103
+        checkpoint = None
         if train_args.resume_from_checkpoint is not None:
             checkpoint = train_args.resume_from_checkpoint
         elif last_checkpoint is not None:
@@ -187,12 +164,12 @@ if __name__ == "__main__":
             huggingface_hub.login()
             # To make sure that we push best, not last model
             best_ckpt_path = trainer.state.best_model_checkpoint
-            classification_model = AutoModelForTokenClassification.from_pretrained(
+            model = AutoModelForTokenClassification.from_pretrained(
                 best_ckpt_path, config=model_config
             )
             repo_name = model_args.model_name_or_path.split("/")[-1]
             repo_name = f"{repo_name}-pie"
-            classification_model.push_to_hub(repo_name)
+            model.push_to_hub(repo_name)
             tokenizer.push_to_hub(repo_name)
 
     # Evaluate model
@@ -200,3 +177,34 @@ if __name__ == "__main__":
         logger.info("*** Evaluate model ***")
         eval_metrics = trainer.evaluate()
         logger.info(eval_metrics)
+
+        # Create confusion matrix for each class
+        eval_data = dataset_encoded["validation"]
+        true_ids = eval_data["labels"]
+        predictions_padded = trainer.predict(eval_data).predictions
+        predicted_ids_padded = np.argmax(predictions_padded, axis=2)
+
+        predicted_ids = []
+        for true_item, padded_item in zip(true_ids, predicted_ids_padded):
+            predicted_ids.append(padded_item[: len(true_item)])
+
+        report_df = pd.DataFrame({"true_ids": true_ids, "predicted_ids": predicted_ids})
+
+        # Convert labels ids to labels itself. -100 will be marked as "IGN" (ignore) and removed
+        report_df["true_labels"] = report_df["true_ids"].apply(
+            lambda x: [index2tag.get(i, "IGN") for i in x]
+        )
+        report_df["predicted_labels"] = report_df["predicted_ids"].apply(
+            lambda x: [index2tag.get(i, "IGN") for i in x]
+        )
+        tokens_df = report_df.explode(column=list(report_df.columns), ignore_index=True)
+        tokens_df = tokens_df.query("true_labels != 'IGN'")
+
+        print_classification_report(
+            y_true=tokens_df["true_labels"],
+            y_pred=tokens_df["predicted_labels"],
+            labels=[
+                label for _, label in sorted(index2tag.items(), key=lambda x: x[0])
+            ],
+            normalize="true",
+        )
