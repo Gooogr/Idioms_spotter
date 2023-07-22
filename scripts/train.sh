@@ -8,7 +8,7 @@ The full list of training parameters is available here:
 https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py#L135
 '
 
-python3 ./src/model/train.py \
+python3 scripts/model/train.py \
   --model_name_or_path xlm-roberta-base\
   --output_dir ./models/xlm-roberta-base-pie \
   --num_train_epochs 10 \
@@ -26,4 +26,5 @@ python3 ./src/model/train.py \
   --push_to_hub False \
   --report_to="wandb" \
   --evaluation_strategy epoch \
-  --save_strategy epoch 
+  --save_strategy epoch \
+  # --no_cuda True

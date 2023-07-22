@@ -72,7 +72,36 @@ The code will either run on a pre-saved model from the selected folder or downlo
 
 Alternatively, you can specify model and training params in `train.sh`
 ```
-bash train.sh
+bash scripts/train.sh
+```
+
+## Model evaluation
+You can re-configure `./sripts/model/train.py` input parameters for only model validation mode.<br>
+Alternatively, you can specify model in `eval.sh`
+```
+bash scripts/eval.sh
+```
+
+In addition to the wandb metrics report, you'll get detailed information on each class of NER tags.
+An example of such report:
+```
+Confusion Matrix:
+             | O            B-PIE        I-PIE       
+-------------------------------------------------
+O            | 0.981        0.004        0.015       
+B-PIE        | 0.003        0.980        0.018       
+I-PIE        | 0.002        0.003        0.994       
+
+Class-wise Metrics:
+O          Precision: 0.781 | Recall: 0.981 | F1-score: 0.870
+B-PIE      Precision: 0.787 | Recall: 0.980 | F1-score: 0.873
+I-PIE      Precision: 1.000 | Recall: 0.994 | F1-score: 0.997
+
+Micro-average Metrics:
+Precision: 0.994 | Recall: 0.994 | F1-score: 0.994
+
+Macro-average Metrics:
+Precision: 0.856 | Recall: 0.985 | F1-score: 0.913
 ```
 
 ## Running web app with API
