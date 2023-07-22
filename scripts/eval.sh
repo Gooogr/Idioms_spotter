@@ -11,7 +11,7 @@ python3 scripts/model/train.py \
   --model_name_or_path models/xlm-roberta-base-pie \
   --output_dir ./models/xlm-roberta-base-pie \
   --seed 42 \
-  --per_device_eval_batch_size 8 \
+  --per_device_eval_batch_size 16 \
   --log_level info \
   --do_train False \
   --do_eval True \
