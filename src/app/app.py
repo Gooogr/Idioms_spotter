@@ -11,9 +11,6 @@ from annotated_text import annotated_text
 from helper import send_request, split_text_by_entities
 from nltk.tokenize import sent_tokenize
 
-
-
-
 URL = "http://fastapi:8000/predict_ner"
 DEFAULT_TEXT = """Sometimes, I get stuck and can't see the forest for the trees.
 That's when I need to take a step back and think outside the box."""
