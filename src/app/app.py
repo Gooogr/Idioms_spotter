@@ -11,20 +11,18 @@ from annotated_text import annotated_text
 from helper import send_request, split_text_by_entities
 from nltk.tokenize import sent_tokenize
 
-nltk.download("punkt")
-
-
 URL = "http://fastapi:8000/predict_ner"
-DEFAULT_TEXT = """
-Sometimes, I get stuck and can't see the forest for the trees. That's when I
- need to take a step back and think outside the box."""
+DEFAULT_TEXT = """Sometimes, I get stuck and can't see the forest for the trees.
+That's when I need to take a step back and think outside the box."""
 
+st.set_page_config(layout="wide")
 st.title("Idioms spotter 👀")
 
-input_text = st.text_input("Source text", DEFAULT_TEXT)
-input_text = input_text.replace("\n", "")
+input_text = st.text_area("Source text", DEFAULT_TEXT)
+input_text = input_text.replace("\n", " ")
 
-if st.button("Send constant request"):
+if st.button("Find idioms"):
+    nltk.download("punkt")
     # Get API response with NERs tags
     time_start = time.time()
     response = send_request(input_text, URL).text
@@ -39,6 +37,7 @@ if st.button("Send constant request"):
     result = []
     for sent, entities in zip(sentences, response):
         chunks = split_text_by_entities(sent, entities)  # type: ignore
+        chunks[-1][0] += " "  # add space after sentence
         result.extend(chunks)
 
     # Skip "O" tags
@@ -58,4 +57,4 @@ if st.button("Send constant request"):
     st.write(f"Total time: {time_finish - time_start :.2f} sec")
 
 st.write()
-st.write("Check `localhost:8000/docs` for API documentation.")
+st.write("[GitHub](https://github.com/Gooogr/Idioms_spotter)")

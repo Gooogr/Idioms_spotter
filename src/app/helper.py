@@ -1,6 +1,6 @@
 """Helper functions for streamlit web app."""
 
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import requests
 
@@ -22,7 +22,7 @@ def send_request(text: str, url: str, timeout: int = 10) -> requests.models.Resp
     return result
 
 
-def split_text_by_entities(text: str, entities: List[Dict]) -> List[Tuple[str, str]]:
+def split_text_by_entities(text: str, entities: List[Dict]) -> List[List[str]]:
     """
     Splits the input text into substrings based on the start and end indices of
     entities and aligns the resulting substrings with their corresponding
@@ -37,7 +37,7 @@ def split_text_by_entities(text: str, entities: List[Dict]) -> List[Tuple[str, s
         * "start": The starting index of the entity in the input text.
 
     Returns:
-    - result (list): A list of tuples, where each tuple contains a substring
+    - result (list): A list of list[str, str], where each list contains a substring
         of the input text and its corresponding entity tag.
     """
     result = []
@@ -45,9 +45,9 @@ def split_text_by_entities(text: str, entities: List[Dict]) -> List[Tuple[str, s
     for entity in entities:
         end = entity["start"]
         if start < end:
-            result.append((text[start:end], "O"))
-        result.append((text[end : entity["end"]], entity["entity"]))
+            result.append([text[start:end], "O"])
+        result.append([text[end : entity["end"]], entity["entity"]])
         start = entity["end"]
     if start < len(text):
-        result.append((text[start:], "O"))
+        result.append([text[start:], "O"])
     return result
