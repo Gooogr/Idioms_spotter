@@ -20,3 +20,4 @@ python3 scripts/model/train.py \
   --evaluation_strategy epoch \
   --save_strategy epoch \
   --no_cuda True \
+  --use_lora False \

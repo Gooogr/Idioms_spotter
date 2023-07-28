@@ -1,4 +1,4 @@
-# pylint: disable=C0103,W0632,W0621,E1102
+# pylint: disable=C0103,W0632,W0621,E0611
 
 """
 Fine-tuning HF models for PIEs token classification.
@@ -6,13 +6,13 @@ Full list of TrainingArguments available here:
 https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py
 """
 import os
-from dataclasses import dataclass, field
 
 import huggingface_hub
 import numpy as np
 import pandas as pd
-import torch
+from arguments import DataTrainArguments, ModelArguments, PeftArguments
 from datasets import load_dataset
+from model import WeightedTrainer
 from model_helper import (
     create_compute_metrics,
     get_device,
@@ -21,13 +21,13 @@ from model_helper import (
     get_tags_classification_weights,
     tokenize_and_allign_labels,
 )
+from peft import LoraConfig, TaskType, get_peft_model
 from report_helper import print_classification_report
 from transformers import (
     AutoModelForTokenClassification,
     AutoTokenizer,
     DataCollatorForTokenClassification,
     HfArgumentParser,
-    Trainer,
     TrainingArguments,
     set_seed,
 )
@@ -37,46 +37,11 @@ import wandb
 
 wandb.login()
 
-
-@dataclass
-class ModelArguments:
-    model_name_or_path: str = field(
-        metadata={
-            "help": "Path to pretrained model or model identifier from huggingface.co/models"
-        },
-    )
-
-
-@dataclass
-class DataTrainArguments:
-    dataset_name: str = field(
-        default="Gooogr/pie_idioms",
-        metadata={"help": "Dataset identifier from huggingface.co/datasets"},
-    )
-
-
-class CustomTrainer(Trainer):
-    def __init__(self, class_weights, device, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.class_weights = class_weights
-        self.device = device
-
-    def compute_loss(self, model, inputs, return_outputs: bool = False):
-        labels = inputs.get("labels")
-        # forward pass
-        outputs = model(**inputs)
-        logits = outputs.get("logits")
-        # compute custom loss
-        loss_fct = torch.nn.CrossEntropyLoss(
-            weight=torch.tensor(self.class_weights)
-        ).to(self.device)
-        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
-        return (loss, outputs) if return_outputs else loss
-
-
 if __name__ == "__main__":
-    parser = HfArgumentParser((TrainingArguments, DataTrainArguments, ModelArguments))
-    train_args, data_args, model_args = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser(
+        (TrainingArguments, DataTrainArguments, ModelArguments, PeftArguments)
+    )
+    train_args, data_args, model_args, peft_args = parser.parse_args_into_dataclasses()
 
     # Setup logging
     logger = get_logger(train_args)
@@ -99,6 +64,17 @@ if __name__ == "__main__":
     model = AutoModelForTokenClassification.from_pretrained(
         model_args.model_name_or_path, config=model_config
     )
+    if peft_args.use_lora:
+        peft_config = LoraConfig(
+            task_type=TaskType.TOKEN_CLS,
+            inference_mode=False,
+            r=peft_args.r,
+            lora_alpha=peft_args.lora_alpha,
+            lora_dropout=peft_args.lora_dropout,
+            bias=peft_args.bias,
+        )
+        model = get_peft_model(model, peft_config)
+
     model = model.to(device)
 
     # Set up tokenizer and collator
@@ -136,7 +112,7 @@ if __name__ == "__main__":
     # Set up trainer
     compute_metrics = create_compute_metrics(index2tag)
     weights = get_tags_classification_weights(dataset["train"], "ner_tags")
-    trainer = CustomTrainer(
+    trainer = WeightedTrainer(
         model=model,
         args=train_args,
         data_collator=data_collator,

@@ -27,4 +27,5 @@ python3 scripts/model/train.py \
   --report_to="wandb" \
   --evaluation_strategy epoch \
   --save_strategy epoch \
+  --use_lora True \
   # --no_cuda True
